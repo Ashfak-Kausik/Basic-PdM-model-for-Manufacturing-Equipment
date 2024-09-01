@@ -1,0 +1,60 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+#Step 1: Load the Data
+#Replace with your dataset; the dataset contains sensor data with equipment status
+df = pd.read_csv('equipment_sensor_data.csv')  # Replace with actual data path
+
+#Inspect the first few rows of the data
+print(df.head())
+
+#Step 2: Data Preprocessing
+#Handle missing values by filling with mean or appropriate methods
+df.fillna(df.mean(), inplace=True)
+
+#Select relevant features and target variable
+X = df[['temperature', 'vibration', 'pressure', 'usage_hours']]  # Example features
+y = df['equipment_status']  # Target: 0 (Healthy), 1 (Needs Maintenance), 2 (Failure)
+
+#Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+#Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+
+#Step 3: Model Building
+#Use Random Forest Classifier for classification
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+#Step 4: Prediction and Evaluation
+# Predict the status of equipment
+y_pred = model.predict(X_test)
+
+#Evaluate the model
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+#Plot Confusion Matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
+
+#Step 5: Feature Importance Analysis
+#Display which features are most important for predictions
+importances = model.feature_importances_
+features = X.columns
+plt.barh(features, importances, color='teal')
+plt.xlabel('Importance')
+plt.title('Feature Importance')
+plt.show()
