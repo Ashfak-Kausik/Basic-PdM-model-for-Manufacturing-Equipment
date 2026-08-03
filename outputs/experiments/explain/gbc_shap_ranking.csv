@@ -1,0 +1,10 @@
+rank,feature,mean_abs_shap,is_engineered
+1,Rotational speed [rpm],0.3124783886005744,False
+2,RelationTemperature,0.26451060010121535,True
+3,WearRPM,0.26385523805920347,True
+4,Tool wear [min],0.26355595139527965,False
+5,Power (W),0.208421322639025,True
+6,Process temperature [K],0.07837852093903248,False
+7,Torque [Nm],0.054411535036758336,False
+8,ToolWearTorque,0.028377363733690562,True
+9,Air temperature [K],0.00120536784150103,False

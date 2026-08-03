@@ -1,0 +1,7 @@
+System info (measured once, for the latency numbers below)
+============================================================
+CPU: 13th Gen Intel(R) Core(TM) i5-13400F
+Logical CPUs available: 16
+RAM: 15.5 GB
+Python: 3.10.12  |  Platform: Linux-6.8.0-136-generic-x86_64-with-glibc2.35
+All locked-config models run single-threaded by default (no n_jobs>1 set anywhere in src/config.py), so these numbers are single-thread CPU-comparable across models.

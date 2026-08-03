@@ -1,0 +1,3 @@
+comparison,both_correct,OR-Logic_correct_only,Traditional Voting_correct_only,both_wrong,n_discordant,test_type,statistic,p_value,significant_at_0.05,GBC_correct_only
+OR-Logic vs Traditional Voting,2431,24,26.0,19,50,chi2_corrected,0.02,0.887537083981715,False,
+OR-Logic vs GBC,2455,0,,27,18,exact_binomial,0.0,7.62939453125e-06,True,18.0

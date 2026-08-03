@@ -1,0 +1,13 @@
+Stratified train/test split -- class balance
+=============================================
+Seed: 42  |  test_size: 0.25  |  stratify: y (Machine failure)
+
+Train rows: 7500
+  Machine failure = 1 (failure):       254  (3.387%)
+  Machine failure = 0 (non-failure):  7246  (96.613%)
+
+Test rows: 2500
+  Machine failure = 1 (failure):        85  (3.400%)
+  Machine failure = 0 (non-failure):  2415  (96.600%)
+
+Total rows: 10000  |  Total failures: 339 (3.390%)
