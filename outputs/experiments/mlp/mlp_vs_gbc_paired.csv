@@ -1,0 +1,2 @@
+comparison,metric,n,n_mlp_higher,n_gbc_higher,n_tied,mean_diff,median_diff,wilcoxon_stat,wilcoxon_p,ttest_p,effect_size,significant_at_0.05
+MLP vs GBC,recall,30,0,30,0,-0.2576470588235294,-0.24117647058823524,0.0,1.7311263949197288e-06,2.6633555653371285e-12,-1.0,True

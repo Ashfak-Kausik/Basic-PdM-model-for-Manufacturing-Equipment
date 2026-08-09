@@ -229,6 +229,44 @@ Figure: `outputs/figures_final/shap_gbc.{png,pdf}` (beeswarm + mean|SHAP| bar, e
 
 ---
 
+## MLP baseline (comparison only, not in ensembles)
+
+Source: `outputs/experiments/mlp/mlp_results.csv`, `mlp_stability.csv`,
+`mlp_vs_gbc_paired.csv`, `NOTES.md`.
+
+Answers R1.3 / R1.11 ("why no neural network?") with one empirical row: a
+lightly-tuned `MLPClassifier((64, 32), relu, alpha=1e-4, early_stopping=True,
+random_state=42)`, fit on the same locked modified nine-feature set, no
+class weighting. **Not** added to `src/config.py`'s five base learners and
+**not** included in Traditional Voting or OR-Logic — a standalone comparison
+baseline only. All numbers above this section are unaffected.
+
+| Model | Accuracy | Precision | Recall | F1 | Specificity | FN rate | MCC | AUC | TP | FN | TN | FP |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| MLP | 0.9784 | 0.7925 | 0.4941 | 0.6087 | 0.9954 | 0.5059 | 0.6159 | 0.9768 | 42 | 43 | 2404 | 11 |
+| GBC | 0.9892 | 0.8718 | 0.8000 | 0.8344 | 0.9959 | 0.2000 | 0.8296 | 0.9763 | 68 | 17 | 2405 | 10 |
+| OR-Logic | 0.9820 | 0.7083 | 0.8000 | 0.7514 | 0.9884 | 0.2000 | 0.7436 | 0.8980 | 68 | 17 | 2387 | 28 |
+
+*Source: `mlp_results.csv` (SEED=42 locked split; GBC/OR-Logic rows read verbatim from `results_clean.csv` + `autofeat_results.csv`).*
+
+30-seed stability (mean, 95% CI): MLP recall = 0.481 [0.236, 0.684], vs GBC's
+already-committed 0.739 [0.661, 0.827] (`stability_summary.csv`).
+*Source: `mlp_stability.csv`.*
+
+Paired Wilcoxon signed-rank, MLP vs GBC recall, across the same 30 seeds:
+GBC higher in 30/30 seeds, mean diff = −0.258 (−25.8 pp), Wilcoxon
+p = 1.73e-6, effect size = −1.0. *Source: `mlp_vs_gbc_paired.csv`.*
+
+Verdict (from `NOTES.md`): the MLP **clearly underperforms GBC on recall**,
+consistently across all 30 resamples, despite near-identical ROC AUC
+(0.977 vs 0.976) — a discrepancy flagged as a default-threshold artifact
+(the MLP ranks failures about as well as GBC but is more conservative at the
+default 0.5 cutoff on this ~3.4%-positive class), not a genuine ranking-
+quality gap. The architecture was not tuned, and no result here was used to
+adjust the config after the fact.
+
+---
+
 ## Needs re-export
 
 None. Every figure and table above was buildable from arrays/CSVs already on
