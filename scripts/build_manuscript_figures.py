@@ -162,8 +162,12 @@ def fig23_normal_dist():
 def _plot_corr(cols, out_name, title):
     corr = df_fe[cols + [TARGET]].rename(columns=FEATURE_SHORT).corr()
     fig, ax = plt.subplots(figsize=(0.85 * len(corr.columns) + 2, 0.85 * len(corr.columns) + 1))
+    # Same diverging palette as src/evaluate.py's plot_correlation (green =
+    # positive, red = negative) so fig30/fig31 match the rest of the repo's
+    # correlation-matrix figures instead of an unrelated blue/maroon scale.
+    cmap = sns.diverging_palette(2, 165, s=80, l=55, n=9, as_cmap=True)
     sns.heatmap(
-        corr, cmap="RdBu_r", vmin=-1, vmax=1, annot=True, fmt=".2f",
+        corr, cmap=cmap, vmin=-1, vmax=1, annot=True, fmt=".2f",
         square=True, linewidths=0.4, linecolor="white",
         annot_kws={"fontsize": 7}, cbar_kws={"label": "Pearson r"}, ax=ax,
     )
@@ -247,13 +251,29 @@ def fig_confusion_ensemble(pred, name, color_key, out_name):
 
 # ============================================================================
 # fig51 -- scatter/strip plots: engineered features vs. machine failure,
-# with the paper's claimed thresholds (Sec. 3.4) overlaid as reference lines.
+# with reference lines (Sec. 3.4 thresholds) overlaid. Line positions are the
+# exact values reported in the manuscript; only their displayed legend text
+# is rounded for readability -- the lines themselves are drawn at full
+# precision (see THRESHOLD_LINES below), so plot geometry is unaffected by
+# the rounded labels below it.
 # ============================================================================
-THRESHOLDS = {
-    "RelationTemperature": {"lines": [-12.1, -7.6], "label": "claimed range [-12.1, -7.6]"},
-    "Power (W)": {"lines": [3515.22, 8998.49], "label": "claimed range [3515.22, 8998.49]"},
-    "WearRPM": {"lines": [0.174], "label": "claimed threshold 0.174"},
-    "ToolWearTorque": {"lines": [0.26253], "label": "claimed threshold 0.26253"},
+THRESHOLD_LINES = {
+    "RelationTemperature": [-12.1, -7.6],
+    "Power (W)": [3515.22, 8998.49],
+    "WearRPM": [0.174],
+    "ToolWearTorque": [0.26253],
+}
+THRESHOLD_LEGEND = {
+    "RelationTemperature": "Observed range (non-failure): -12.1 to -7.6 K",
+    "Power (W)": "Lower-failure-rate band: 3515 to 8998 W",
+    "WearRPM": "Observed limit (non-failure): 0.174",
+    "ToolWearTorque": "Reference value: 0.263",
+}
+PANEL_TITLES = {
+    "RelationTemperature": "RelationTemperature [K]",
+    "Power (W)": "Power [W]",
+    "WearRPM": "WearRPM",
+    "ToolWearTorque": "ToolWearTorque",
 }
 
 
@@ -268,12 +288,22 @@ def fig51_scatter_engineered():
         x_fail = 1 + rng.uniform(-0.18, 0.18, size=fail.sum())
         ax.scatter(x_ok, df_fe.loc[~fail, feat], s=6, alpha=0.35, color=NOFAIL_COLOR, label="No Failure", linewidths=0)
         ax.scatter(x_fail, df_fe.loc[fail, feat], s=10, alpha=0.85, color=FAIL_COLOR, label="Failure", linewidths=0)
-        for ln in THRESHOLDS[feat]["lines"]:
+        for ln in THRESHOLD_LINES[feat]:
             ax.axhline(ln, color=INK, lw=0.8, linestyle=":")
         ax.set_xticks([0, 1])
         ax.set_xticklabels(["No Failure", "Failure"])
         ax.set_ylabel(feat)
-        ax.set_title(f"{feat} ({THRESHOLDS[feat]['label']})", fontsize=8.5)
+        ax.set_title(PANEL_TITLES[feat], fontsize=8.5)
+        # Reference-line caption goes below the x-axis tick labels (one
+        # collapsed label per panel, even for panels with two dashed lines)
+        # rather than an in-plot legend box -- with these scatter/strip
+        # panels the data fills the full width at nearly every y-value
+        # (including right at the dashed lines themselves, since two of the
+        # four thresholds sit at the observed min/max), so any in-axes
+        # legend placement sits on top of either the line or the points.
+        # set_xlabel is guaranteed clear of both and is accounted for by
+        # tight_layout automatically.
+        ax.set_xlabel(THRESHOLD_LEGEND[feat], fontsize=6.5, color=MUTED_GREY, labelpad=6)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
     handles = [
