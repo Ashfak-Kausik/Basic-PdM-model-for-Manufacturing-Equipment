@@ -1,0 +1,323 @@
+\section{Results and Analysis}
+
+This section presents comprehensive experimental results demonstrating the effectiveness of the proposed PdM framework. Results are organized to show the progression from baseline model performance on raw data, through the impact of feature engineering, to the final ensemble model performance. All findings are supported by detailed confusion matrices, performance metrics, and comparative visualizations.
+
+\subsection{Baseline Performance on Raw Data}
+The baseline evaluation establishes reference performance using raw sensor data without feature engineering or cost-sensitive learning. Due to the severe class imbalance, most models achieved high overall accuracy but exhibited poor failure detection capability. These results highlight the limitations of conventional classifiers when applied directly to imbalanced predictive maintenance datasets and motivate the need for enhanced feature representation and ensemble strategies.
+
+\subsubsection{Individual Model Results}
+
+Initial experiments evaluated five supervised machine learning algorithms on the original dataset containing five operational parameters: air temperature, process temperature, rotational speed, torque, and tool wear. Table \ref{tab:baseline_performance} summarizes the baseline performance metrics for individual classifiers.
+
+\begin{table*}[htbp]
+\centering
+\caption{Baseline performance of individual models on raw data}
+\label{tab:baseline_performance}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Specificity} \\
+\hline
+SVM & 0.9720 & 0.8261 & 0.2235 & 0.3519 & 0.9983 \\
+RFC & 0.9840 & 0.8571 & 0.6353 & 0.7297 & 0.9963 \\
+KNN & 0.9732 & 0.7500 & 0.3176 & 0.4463 & 0.9963 \\
+LR & 0.9696 & 0.7368 & 0.1647 & 0.2692 & 0.9979 \\
+GBC & 0.9852 & 0.8871 & 0.6471 & 0.7483 & 0.9971 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{The baseline results reveal a consistent pattern across all models: while overall accuracy exceeds 96\% and specificity remains above 99.6\%, recall (failure detection sensitivity) varies dramatically. Gradient Boosting and Random Forest achieve the strongest baseline performance, with recall rates of 64.71\% and 63.53\% respectively, demonstrating their capacity to detect complex patterns in the original feature space -- GBC edges out RF as the best individual model even on raw, unengineered features. SVM exhibits the lowest recall (22.35\%), missing over three-quarters of actual failures despite maintaining high specificity. KNN and Logistic Regression achieve recall of 31.76\% and 16.47\% respectively, indicating limited effectiveness for failure detection on raw features alone.}
+
+\subsubsection{Confusion Matrices and Performance Metrics}
+
+Confusion matrices reveal the classification behavior across baseline and improved models, demonstrating the challenges of imbalanced failure prediction and the effectiveness of proposed solutions.
+
+\textcolor{blue}{Models trained on original data exhibit the classic imbalanced classification problem: all achieve true negatives exceeding 2,406 of 2,415 non-failure test instances (>99.6\%) with few false positives (4--9), but show highly variable failure detection out of 85 actual failures -- true positives range from 14 (LR) to 55 (GBC) and false negatives from 30 (GBC) to 71 (LR). This confirms that standard ML models with symmetric loss functions prioritize majority class accuracy over minority class detection, fundamentally inadequate for predictive maintenance.}
+
+The confusion matrices for models trained on modified data with engineered features show substantial detection improvements. \textcolor{blue}{[FIGURE MISSING: no confusion-matrix figure for the modified-data models is currently included in this section -- \texttt{fig:confusion\_modified} was incorrectly pointing at the correlation-matrix figure instead (now corrected below, see \texttt{fig:corr\_original}). A ready-made asset for this figure already exists at \texttt{outputs/figures\_final/confusion\_grid\_modified.png}; add a \texttt{figure} environment with that image and a fresh unique label (e.g. \texttt{fig:confusion\_modified\_grid}) here before publication.]}
+
+
+
+\textcolor{blue}{All models maintain high true negative rates exceeding 99.5\% (TN > 2,403 of 2,415). True positive performance varies substantially: Gradient Boosting achieves the highest recall at 80.00\% (68 TP, 17 FN), closely followed by Random Forest at 77.65\% (66 TP, 19 FN), then KNN at 40.00\% (34 TP, 51 FN), SVM at 31.76\% (27 TP, 58 FN), and Logistic Regression at 22.35\% (19 TP, 66 FN). Gradient Boosting now edges out Random Forest as the strongest individual model on the modified feature set, with both tree-based ensembles substantially outperforming the linear, instance-based, and kernel approaches for this imbalanced CNC maintenance dataset.}
+
+Figure \ref{fig:confusion_ensembles} compares traditional voting and proposed OR-logic ensembles, revealing fundamental differences in classification strategies.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=0.7\columnwidth]{fig42.png}
+        \caption{Traditional Voting Ensemble}
+        \label{fig:confusion_voting}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=0.7\columnwidth]{fig43.png}
+        \caption{Proposed OR-Logic Ensemble}
+        \label{fig:confusion_orlogic}
+    \end{subfigure}
+
+    \caption{Confusion matrices comparing traditional voting ensemble and proposed OR-logic ensemble on modified data}
+    \label{fig:confusion_ensembles}
+\end{figure}
+
+\textcolor{blue}{Traditional voting achieves near-perfect non-failure identification (2,413 TN, 2 FP) but detects only 44 of 85 failures (51.76\% recall), missing 41. OR-logic achieves 2,387 TN (98.84\% specificity) with 28 FP (1.16\% false alarm rate) while identifying 68 of 85 failures (80.00\% recall), missing only 17. By tolerating 26 additional false positives, OR-logic identifies 24 additional true failures -- a 54.5\% relative improvement in recall over voting. Operationally, accepting 26 additional inspections prevents 24 additional catastrophic failures, favorable given asymmetric costs where undetected failures exceed inspection costs by orders of magnitude.}
+
+\begin{table*}[htbp]
+\centering
+\caption{Detailed performance metrics comparing individual models and ensemble approaches}
+\label{tab:detailed_metrics}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Metric} & \textbf{SVM} & \textbf{RFC} & \textbf{GBC} & \textbf{Voting} & \textbf{OR-Logic} \\
+\hline
+\textbf{Overall Performance} & & & & & \\
+\quad Accuracy & 97.6\% & 99.0\% & 98.9\% & 98.3\% & \textbf{98.2\%} \\
+\quad Precision & 90.0\% & 91.7\% & 87.2\% & 95.7\% & \textbf{70.8\%} \\
+\quad Recall & 31.8\% & 77.6\% & 80.0\% & 51.8\% & \textbf{80.0\%} \\
+\quad F1-Score & 47.0\% & 84.1\% & 83.4\% & 67.2\% & \textbf{75.1\%} \\
+\hline
+\textbf{Confusion Matrix Elements} & & & & & \\
+\quad True Positives & 27 & 66 & 68 & 44 & \textbf{68} \\
+\quad False Negatives & 58 & 19 & 17 & 41 & \textbf{17} \\
+\quad True Negatives & 2,412 & 2,409 & 2,405 & 2,413 & \textbf{2,387} \\
+\quad False Positives & 3 & 6 & 10 & 2 & \textbf{28} \\
+\hline
+\textbf{Error Rates} & & & & & \\
+\quad False Negative Rate & 68.24\% & 22.35\% & 20.00\% & 48.24\% & \textbf{20.00\%} \\
+\quad False Positive Rate & 0.12\% & 0.25\% & 0.41\% & 0.08\% & \textbf{1.16\%} \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{Table \ref{tab:detailed_metrics} shows that OR-logic ties the best individual model, GBC, for the lowest false negative rate on this split -- both at 20.00\% (17 of 85 failures missed) -- while traditional voting misses 48.24\% of failures. This represents a 58.5\% relative reduction in missed failures versus traditional voting. Against the best individual model, OR-logic is exactly tied on this single SEED=42 split rather than superior to it; its advantage over GBC is a cross-seed effect, with a +3.8 percentage-point mean recall gain averaged over 30 stratified resamples (paired Wilcoxon signed-rank test, $p<0.001$). OR-logic's false positive rate (1.16\%) is higher than GBC's (0.41\%), reflecting the deliberate trade-off of tolerating more false alarms in exchange for matching GBC's failure-detection sensitivity via a simpler, more transparent union rule. This demonstrates OR-logic aggregation's effectiveness in leveraging complementary detection patterns across diverse base learners, directly aligning with predictive maintenance objectives: minimize missed failures while maintaining manageable false alarms.}
+
+\subsection{Feature Engineering and Data Modification}
+Feature engineering transforms raw sensor measurements into physics-informed variables that capture critical degradation mechanisms. Four engineered features were created: Relation Temperature (thermal gradient), Power (mechanical energy), WearRPM (normalized wear rate), and ToolWearTorque (wear-torque interaction). Statistical time-domain descriptors, frequency-domain features, and domain-driven transformations were applied, along with normalization strategies to enhance class separability, reduce noise sensitivity, and improve model robustness under imbalanced operating conditions. Detailed performance analysis and impact assessment are presented in Section~\ref{sec:feature_engineering_impact}.
+
+\subsection{Impact of Feature Engineering and Data Modification}
+\label{sec:feature_engineering_impact}
+
+The impact of feature engineering is evaluated by comparing model performance before and after feature augmentation and data modification. Physics-informed features significantly improve class separability, leading to notable gains in recall and F1-score across all models. These improvements demonstrate that embedding domain knowledge into the feature space enhances failure sensitivity without disproportionately increasing false positives, thereby strengthening model reliability for real-world predictive maintenance applications.
+
+\subsubsection{Feature Engineering Overview and Validation}
+
+Feature engineering transformed raw sensor measurements into physics-informed variables capturing critical degradation mechanisms. Four engineered features were developed based on domain knowledge of CNC operations:
+
+\begin{itemize}
+    \item \textbf{Relation Temperature}: Thermal gradient between process and air temperature, capturing thermal stress conditions
+    \item \textbf{Power}: Mechanical power derived from torque and rotational speed, indicating energy consumption patterns
+    \item \textbf{WearRPM}: Normalized tool wear rate accounting for operational speed
+    \item \textbf{ToolWearTorque}: Interaction term capturing the combined effect of wear and mechanical loading
+\end{itemize}
+
+Exploratory analysis validates the discriminative power of these engineered features. Figure~\ref{fig:scatter_engineered} presents scatter plots illustrating relationships between engineered features and machine failure. Relation Temperature shows that failures occur outside optimal thermal gradients, Power highlights failures at extreme energy loads, and both WearRPM and ToolWearTorque exhibit threshold behaviors corresponding to increased failure risk. These patterns confirm that engineered features provide meaningful predictive indicators.
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=1.5\columnwidth]{fig51.png}
+    \caption{Scatter plots showing relationship between engineered features and machine failure}
+    \label{fig:scatter_engineered}
+\end{figure*}
+
+Comparative analysis of models trained on original versus modified features demonstrates the substantial impact of feature engineering. Table~\ref{tab:feature_comparison} summarizes the improvement in accuracy and recall. \textcolor{blue}{Engineered features consistently enhance predictive performance, particularly recall for failure detection. GBC and RFC achieve the largest absolute recall gains, while SVM, KNN, and LR -- starting from a much lower baseline recall -- also improve meaningfully, though by smaller absolute percentage-point margins, validating the effectiveness of physics-informed feature engineering in enabling more robust failure prediction.}
+
+\begin{table}[htbp]
+\centering
+\caption{Performance comparison: original features vs. modified features}
+\label{tab:feature_comparison}
+\small
+\begin{tabular}{lcccc}
+\hline
+\textbf{Model} & \multicolumn{2}{c}{\textbf{Original Features}} & \multicolumn{2}{c}{\textbf{Modified Features}} \\
+ & \textbf{Accuracy} & \textbf{Recall} & \textbf{Accuracy} & \textbf{Recall} \\
+\hline
+SVM & 0.9720 & 0.2235 & 0.9756 & 0.3176 \\
+RFC & 0.9840 & 0.6353 & 0.9900 & 0.7765 \\
+KNN & 0.9732 & 0.3176 & 0.9760 & 0.4000 \\
+LR & 0.9696 & 0.1647 & 0.9688 & 0.2235 \\
+GBC & 0.9852 & 0.6471 & 0.9892 & 0.8000 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Individual Model Results on Modified Data}
+
+Following feature engineering, models were retrained on the augmented dataset containing nine features: five original parameters plus four engineered features. \textcolor{blue}{Feature engineering yields consistent recall improvements across all models. GBC achieves the largest absolute gain, increasing recall from 64.71\% to 80.00\% (+15.29pp) while maintaining precision of 87.18\% and overall accuracy of 98.92\%, making it the strongest individual model on the modified feature set. RFC follows closely, improving from 63.53\% to 77.65\% recall (+14.12pp) with accuracy of 99.00\%. Models with weaker baseline performance also improve: SVM's recall rises from 22.35\% to 31.76\% (+9.41pp), KNN from 31.76\% to 40.00\% (+8.24pp), and LR from 16.47\% to 22.35\% (+5.88pp). These consistent improvements validate that physics-informed feature engineering enhances the discriminative capacity of the feature space, enabling more effective failure pattern recognition.}
+
+Figure \ref{fig:corr_original} illustrates the correlation structure of the original CNC machine dataset prior to feature engineering, highlighting baseline relationships among raw process variables and machine failure. This figure serves as a reference point for assessing how engineered features reshape feature interactions and improve model discrimination in subsequent analyses.
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=1.5\columnwidth]{fig30.png}
+    \caption{Correlation matrix of the original CNC machine dataset prior to feature engineering}
+    \label{fig:corr_original}
+\end{figure*}
+
+\subsubsection{Performance Improvement Analysis}
+
+Table \ref{tab:improvement_analysis} quantifies the impact of feature engineering by comparing performance metrics before and after data modification.
+
+\begin{table*}[htbp]
+\centering
+\caption{Performance improvement analysis: raw data vs. modified data}
+\label{tab:improvement_analysis}
+\small
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Model} & \multicolumn{2}{c}{\textbf{Accuracy}} & \multicolumn{2}{c}{\textbf{Recall}} & \multicolumn{2}{c}{\textbf{Improvement}} \\
+ & \textbf{Raw} & \textbf{Modified} & \textbf{Raw} & \textbf{Modified} & \textbf{Acc. (pp)} & \textbf{Recall (pp)} \\
+\hline
+SVM & 0.9720 & 0.9756 & 0.2235 & 0.3176 & +0.36 & +9.41 \\
+RFC & 0.9840 & 0.9900 & 0.6353 & 0.7765 & +0.60 & +14.12 \\
+KNN & 0.9732 & 0.9760 & 0.3176 & 0.4000 & +0.28 & +8.24 \\
+LR & 0.9696 & 0.9688 & 0.1647 & 0.2235 & -0.08 & +5.88 \\
+GBC & 0.9852 & 0.9892 & 0.6471 & 0.8000 & +0.40 & +15.29 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{The improvement analysis reveals a more nuanced picture than a uniform gain across all models. Four of the five models show modest accuracy improvements, from +0.28 to +0.60 percentage points; LR is the exception, showing a negligible accuracy decrease of -0.08 percentage points, effectively unchanged. All five models show consistent, and in most cases substantial, gains in recall, ranging from +5.88 percentage points for LR to +15.29 percentage points for GBC. Notably, GBC -- already the strongest baseline performer -- achieves the single largest absolute recall gain from feature engineering, followed closely by RFC (+14.12pp); SVM (+9.41pp), KNN (+8.24pp), and LR (+5.88pp), whose baseline recall was much lower, see smaller absolute point gains despite having access to the same engineered features. These recall gains are achieved without a general loss of specificity, as all models maintain true negative rates at or above 99.5\%, keeping false alarms in check. Precision improves for three of the five models (SVM, RFC, KNN); LR and GBC show a modest precision decrease (LR: 73.68\%$\to$61.29\%; GBC: 88.71\%$\to$87.18\%) as the modified feature set shifts their decision boundary toward higher recall, a reasonable trade-off given the recall-first objective of this application. Overall, these results validate that domain-informed feature engineering -- capturing thermal stress relationships, power dynamics, and degradation patterns -- substantially enhances failure detection performance without sacrificing operational feasibility.}
+
+\subsubsection{Feature Importance Analysis}
+
+Analysis of feature importance reveals the relative contribution of original versus engineered features to model predictions. For tree-based models (RFC, GBC), feature importance can be quantified through mean decrease in impurity (Gini importance). Results indicate that engineered features, particularly Power and WearRPM, rank among the most influential predictors, often surpassing original features in importance. This confirms that explicit modeling of physical relationships enhances predictive signal compared to raw sensor measurements alone.
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=1.5\columnwidth]{fig31.png}
+    \caption{Correlation matrix of original and engineered features}
+    \label{fig:correlation_heatmap}
+\end{figure*}
+
+Figure \ref{fig:correlation_heatmap} presents the correlation structure among all features in the augmented dataset, revealing strong interdependencies between engineered features and their constituent parameters while confirming that engineered features introduce complementary discriminative information. Notable correlations include the strong positive relationship between Torque and Power (0.96), Tool wear and WearRPM (0.98), and the expected negative correlation between Rotational speed and Torque (-0.86), validating the physical consistency of the feature engineering approach.
+
+The scatter plots in Figure \ref{fig:scatter_engineered} demonstrate clear separation patterns between failure and non-failure classes along engineered feature dimensions. Relation Temperature shows clustering of failures outside the optimal thermal range (-12.1 to -7.6 K). Power exhibits bimodal failure distribution at extreme values. WearRPM and ToolWearTorque display threshold behavior, with failure probability increasing sharply beyond critical values (0.174 and 0.263 respectively). These visualizations provide interpretable evidence that engineered features capture meaningful degradation signatures.
+
+\subsection{Comparison with Automatic Feature Extraction}
+\textcolor{blue}{To assess whether the physics-informed features provide an advantage over generic feature construction, we compared the four engineered features (added to the five raw sensors) against an automatic tabular baseline: a degree-two polynomial expansion of the raw sensors including pairwise interactions, which produces 20 generated features. Both sets were evaluated under the identical pipeline, split, and models. The physics-informed set outperformed the larger automatic set on the failure-detection metrics (recall and AUC) for both the OR-logic ensemble and the strongest individual model, GBC (Table~\ref{tab:autofeat}), despite using roughly five times fewer generated features. For the OR-logic ensemble the automatic features were marginally higher on precision and specificity, so the engineered features are not uniformly superior; rather, they improve the metrics that matter most for this recall-first task while remaining substantially more interpretable, since a threshold on RelationTemperature carries a direct physical meaning that an automatically generated product term does not. Dedicated time-series extractors such as TSFresh and wavelet transforms were not applicable here: the AI4I 2020 data are independent cross-sectional records with no per-machine timestamp or identifier linking observations over time, so no temporal signal exists for such methods to extract.}
+
+\begin{table*}[htbp]
+\centering
+\caption{Physics-informed engineered features versus an automatic degree-two polynomial expansion (20 generated features), under the identical pipeline and split. Best value in each metric per model in bold.}
+\label{tab:autofeat}
+\begin{tabular}{llcccc}
+\hline
+Model & Feature set & Recall & Precision & Specificity & AUC \\
+\hline
+OR-Logic & Engineered & \textbf{0.800} & 0.708 & 0.988 & \textbf{0.898} \\
+OR-Logic & Automatic (poly, 20) & 0.776 & \textbf{0.742} & \textbf{0.990} & 0.885 \\
+GBC & Engineered & \textbf{0.800} & \textbf{0.872} & 0.996 & \textbf{0.976} \\
+GBC & Automatic (poly, 20) & 0.741 & 0.863 & 0.996 & 0.966 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{Proposed Ensemble Model Performance}
+The proposed ensemble model is evaluated to assess its effectiveness in addressing failure detection under severe class imbalance. Performance is analyzed in comparison with traditional voting ensembles to highlight the impact of cost-sensitive OR-logic aggregation. Results demonstrate that the proposed framework substantially improves recall and failure sensitivity while maintaining acceptable precision and specificity for industrial deployment.
+
+
+\subsubsection{Ensemble Results on Raw Data}
+
+To establish a comprehensive baseline, both traditional voting ensemble and the proposed OR-logic ensemble were evaluated on raw data (without engineered features). Table \ref{tab:ensemble_raw} presents the results.
+
+\begin{table*}[htbp]
+\centering
+\caption{Ensemble performance on raw data}
+\label{tab:ensemble_raw}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Ensemble Method} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Specificity} \\
+\hline
+Traditional Voting & 0.9752 & 0.8485 & 0.3294 & 0.4746 & 0.9979 \\
+Proposed OR-Logic & 0.9824 & 0.7531 & 0.7176 & 0.7349 & 0.9917 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{Even on raw data, the OR-logic ensemble demonstrates its core advantage: substantially higher recall (71.76\% vs.\ 32.94\%, a +38.8 percentage-point gain) than traditional voting, at the cost of reduced precision (75.31\% vs.\ 84.85\%, a -9.5 percentage-point decrease). Notably, OR-logic's overall accuracy is not traded away here -- it is marginally higher than voting's (98.24\% vs.\ 97.52\%). This trade-off aligns precisely with predictive maintenance priorities, where detecting failures is paramount and false alarms are operationally manageable.}
+
+\subsubsection{Ensemble Results on Modified Data}
+
+The proposed ensemble framework achieves optimal performance when combining the OR-logic aggregation strategy with engineered features. Table \ref{tab:ensemble_modified} presents comprehensive results.
+
+\begin{table*}[htbp]
+\centering
+\caption{Ensemble performance on modified data (final results)}
+\label{tab:ensemble_modified}
+\begin{tabular}{lccccccc}
+\hline
+\textbf{Method} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Recall} & \textbf{F1} & \textbf{Spec.} & \textbf{MCC} & \textbf{FN Rate} \\
+\hline
+Traditional Voting & 0.9828 & 0.9565 & 0.5176 & 0.6718 & 0.9992 & 0.6969 & 0.4824 \\
+Proposed OR-Logic & 0.9820 & 0.7083 & 0.8000 & 0.7514 & 0.9884 & 0.7436 & 0.2000 \\
+\hline
+\textbf{Best Individual (GBC)} & 0.9892 & 0.8718 & 0.8000 & 0.8344 & 0.9959 & 0.8296 & 0.2000 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{The proposed OR-logic ensemble demonstrates a clear single-split advantage over traditional voting when applied to the modified dataset with engineered features. Overall accuracy is comparable between the two ensemble strategies (98.20\% for OR-logic vs.\ 98.28\% for voting), while OR-logic substantially improves recall to 80.00\%, correctly identifying 68 of 85 failure instances, compared to only 51.76\% (44/85) for traditional voting -- a 28.24 percentage-point absolute improvement. This directly translates into a reduction in false negative rate from 48.24\% under traditional voting to 20.00\% with OR-logic, a 58.5\% relative reduction in missed failures.
+
+Despite prioritizing failure detection, the OR-logic ensemble maintains high specificity at 98.84\%, resulting in 28 false alarms among 2,415 non-failure instances. The Matthews Correlation Coefficient of 0.744 indicates strong overall classification quality under severe class imbalance, while the F1-score of 0.751 reflects the trade-off between precision and recall implied by prioritizing recall.
+
+On this single SEED=42 split, however, OR-logic does not outperform the best individual model, GBC: the two are exactly tied on recall (80.00\%, 68/85 failures each) and false negative rate (20.00\%), and GBC in fact achieves higher accuracy (98.92\% vs.\ 98.20\%), precision (87.18\% vs.\ 70.83\%), F1-score (0.834 vs.\ 0.751), specificity (99.59\% vs.\ 98.84\%), and MCC (0.830 vs.\ 0.744) than OR-logic on this split. OR-logic's advantage over the best individual model is therefore not a single-split effect: across 30 stratified resamples, OR-logic's mean recall exceeds GBC's by +3.8 percentage points (paired Wilcoxon signed-rank test, $p<0.001$, $n=30$ seeds), a modest but statistically consistent cross-seed advantage. We report both results plainly -- tied on this split, a small but real edge across seeds -- rather than overstating a single-split tie as a win.}
+
+\textcolor{blue}{To confirm that OR-logic aggregation is preferable to standard imbalance remedies rather than a substitute for them, we also evaluated SMOTE, cost-sensitive class weighting, and random undersampling within the same pipeline. Each raised raw recall to 0.95--0.98 but sharply degraded precision (to 0.12--0.16) and specificity (to 0.75--0.83) for the OR-logic ensemble, because its false-positive rate is bounded below by the union of its five members' rates, so any per-model rebalancing degrades every member and the union compounds all five. Leaving the base learners unbalanced is therefore the appropriate choice for a union ensemble as summarized in Table~\ref{tab:imbalance}}
+
+\begin{table*}[htbp]
+\centering
+\caption{Imbalance-handling strategies applied within the pipeline (training fold only) for the OR-logic ensemble and the strongest individual model (GBC), against the unbalanced locked configuration. Every rebalancing strategy raises recall but sharply degrades precision and specificity for the union ensemble. GBC's class-weight row equals its baseline because \texttt{GradientBoostingClassifier} has no class-weight parameter.}
+\label{tab:imbalance}
+\begin{tabular}{llccccc}
+\hline
+Strategy & Model & Recall & Precision & Specificity & F1 & MCC \\
+\hline
+None (locked)        & OR-Logic & 0.800 & 0.708 & 0.988 & 0.751 & 0.744 \\
+SMOTE                & OR-Logic & 0.965 & 0.155 & 0.815 & 0.267 & 0.346 \\
+Class-weighting      & OR-Logic & 0.953 & 0.162 & 0.827 & 0.277 & 0.354 \\
+Undersampling        & OR-Logic & 0.976 & 0.122 & 0.753 & 0.217 & 0.297 \\
+\hline
+None (locked)        & GBC & 0.800 & 0.872 & 0.996 & 0.834 & 0.830 \\
+SMOTE                & GBC & 0.906 & 0.348 & 0.940 & 0.503 & 0.540 \\
+Class-weighting      & GBC & 0.800 & 0.872 & 0.996 & 0.834 & 0.830 \\
+Undersampling        & GBC & 0.929 & 0.294 & 0.921 & 0.446 & 0.498 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsubsection{Performance Visualization and Comparative Analysis}
+
+Receiver Operating Characteristic (ROC) curves were generated to assess model discrimination capability across varying decision thresholds. Figure \ref{fig:roc_curves} presents the ROC curves for all five models on the modified dataset.
+
+
+
+\textcolor{blue}{Tree-based ensemble methods demonstrate the strongest discriminative capacity, with RFC (AUC = 0.983) and GBC (AUC = 0.976) achieving the highest scores. SVM performs comparably well despite its low recall, with AUC = 0.973, indicating strong ranking ability that is not reflected in its default-threshold recall. LR achieves AUC = 0.904, while KNN exhibits the weakest ranking performance at AUC = 0.891. These results validate that feature engineering combined with ensemble strategies effectively enhances class separability under severe class imbalance, though AUC alone does not capture the recall differences that motivate the OR-logic ensemble's design.}
+
+Table \ref{tab:final_comparison} summarizes the complete performance evolution from baseline models through feature engineering to the final ensemble architecture.
+
+\begin{table*}[htbp]
+\centering
+\caption{Complete performance comparison: baseline to final ensemble}
+\label{tab:final_comparison}
+\small
+\begin{tabular}{lcccc}
+\hline
+\textbf{Approach} & \textbf{Accuracy} & \textbf{Recall} & \textbf{FN Rate} & \textbf{Improvement} \\
+\hline
+Best Baseline (GBC, raw) & 98.52\% & 64.71\% & 35.29\% & --- \\
+Best Individual (GBC, modified) & 98.92\% & 80.00\% & 20.00\% & +15.3pp recall \\
+Traditional Voting (modified) & 98.28\% & 51.76\% & 48.24\% & -28.2pp recall \\
+\textbf{Proposed Ensemble (modified)} & \textbf{98.20\%} & \textbf{80.00\%} & \textbf{20.00\%} & \textbf{+28.2pp recall} \\
+\hline
+\textbf{vs. Baseline} & -0.32pp & +15.3pp & -15.3pp & --- \\
+\textbf{vs. Best Individual} & -0.72pp & +0.0pp$^{*}$ & +0.0pp$^{*}$ & --- \\
+\textbf{vs. Traditional Voting} & -0.08pp & +28.2pp & -28.2pp & --- \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textcolor{blue}{$^{*}$OR-logic and GBC are exactly tied on recall (0.800 each) and FN rate on this single SEED=42 split; across 30 stratified resamples, OR-logic's mean recall exceeds GBC's by +3.8 percentage points (paired Wilcoxon signed-rank test, $p<0.001$, $n=30$ seeds).}
+
+\textcolor{blue}{The proposed OR-logic ensemble achieves a +15.3 percentage-point recall improvement over the best raw baseline (GBC, 64.71\%$\to$80.00\%), essentially at parity on accuracy (-0.32pp). It is exactly tied with the best individual model on this split (GBC, modified: 80.00\% recall each); OR-logic's advantage over GBC only emerges as a +3.8 percentage-point mean recall gain across 30 resampled seeds (paired Wilcoxon signed-rank test, $p<0.001$), a real but modest cross-seed effect rather than a dramatic single-split one. OR-logic improves recall by +28.2 percentage points over traditional voting (51.76\%$\to$80.00\%), with a corresponding 28.24 percentage-point (58.5\% relative) reduction in false negative rate. These results demonstrate that physics-informed feature engineering combined with OR-logic ensemble aggregation effectively addresses failure detection challenges in imbalanced predictive maintenance datasets, with the ensemble's edge over the single best model reported honestly as a modest, statistically consistent cross-seed effect rather than a single-split win.}

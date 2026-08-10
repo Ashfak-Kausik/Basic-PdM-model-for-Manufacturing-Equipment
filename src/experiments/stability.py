@@ -12,10 +12,22 @@ OR-Logic vs Traditional Voting, and OR-Logic vs GBC (the best individual
 model), to check whether OR-Logic's edge is statistically significant on
 this dataset (not just apparent).
 
+In addition, runs a paired Wilcoxon signed-rank test across the 30
+stratified resamples themselves (not the single locked split): for each of
+the 30 seeds, OR-Logic's recall/fnr is paired against Traditional Voting's
+and against GBC's on that SAME seed's split, then the 30 paired differences
+are tested. This is the primary evidence for the paper's cross-seed recall
+claims (main.tex Sec. 5.6): it directly measures the recall/FNR trade-off
+across repeated partitions, which the single-split McNemar test above
+cannot. (This closes a gap where outputs/experiments/stability/paired_tests.csv
+existed as a committed artifact but had no generating script in src/ --
+this function is that script.)
+
 Outputs:
   outputs/experiments/stability/stability_raw.csv       (30 seeds x 7 models/ensembles, per-metric)
   outputs/experiments/stability/stability_summary.csv    (one row per model/ensemble x metric: mean/std/ci_low/ci_high)
-  outputs/experiments/stability/mcnemar_results.csv      (the two paired tests)
+  outputs/experiments/stability/mcnemar_results.csv      (the two single-split paired tests)
+  outputs/experiments/stability/paired_tests.csv         (the two 30-seed paired Wilcoxon tests, recall + fnr)
   outputs/experiments/stability/recall_forest.png        (forest plot of recall with 95% CI, one row per model/ensemble)
 """
 import sys
@@ -29,6 +41,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import rankdata, ttest_rel, wilcoxon
 from statsmodels.stats.contingency_tables import mcnemar
 
 from src.experiments.common import (
@@ -115,6 +128,55 @@ def paired_mcnemar(y_true, pred_a, pred_b, label_a, label_b):
     }
 
 
+def paired_wilcoxon_30seed(raw_df: pd.DataFrame, name_a: str, name_b: str, metric: str) -> dict:
+    """Pairs name_a's and name_b's per-seed `metric` values (matched by seed,
+    same 30-seed resamples raw_df.run_resamples() already produced) and runs
+    a paired Wilcoxon signed-rank test, plus a paired t-test and a rank-based
+    effect size for context. Mirrors src/experiments/mlp.py's paired_wilcoxon
+    (same statistics, same effect-size formula), applied here to the two
+    ensemble comparisons instead of MLP vs GBC."""
+    a = raw_df[raw_df["model_or_ensemble"] == name_a].set_index("seed")[metric]
+    b = raw_df[raw_df["model_or_ensemble"] == name_b].set_index("seed")[metric]
+    a, b = a.align(b, join="inner")
+    assert len(a) == len(SEEDS), f"expected {len(SEEDS)} matched seeds for {name_a} vs {name_b}/{metric}, got {len(a)}"
+
+    diffs = (a - b).to_numpy()
+    stat, p = wilcoxon(a.to_numpy(), b.to_numpy())
+    t_p = ttest_rel(a.to_numpy(), b.to_numpy()).pvalue
+
+    nonzero = diffs[diffs != 0]
+    if len(nonzero) > 0:
+        ranks = rankdata(np.abs(nonzero))
+        w_pos = ranks[nonzero > 0].sum()
+        w_neg = ranks[nonzero < 0].sum()
+        effect_size = (w_pos - w_neg) / (w_pos + w_neg)
+    else:
+        effect_size = 0.0
+
+    return {
+        "comparison": f"{name_a} vs {name_b}",
+        "metric": metric,
+        "n": len(diffs),
+        "mean_diff": float(diffs.mean()),
+        "median_diff": float(np.median(diffs)),
+        "wilcoxon_stat": float(stat),
+        "wilcoxon_p": float(p),
+        "ttest_p": float(t_p),
+        "effect_size": float(effect_size),
+        "significant_at_0.05": bool(p < 0.05),
+    }
+
+
+def run_paired_tests(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """The 30-seed paired Wilcoxon tests behind main.tex's Sec. 5.6 claims:
+    OR-Logic vs Traditional Voting and OR-Logic vs GBC, on both recall and fnr."""
+    rows = []
+    for other in ["Traditional Voting", "GBC"]:
+        for metric in ["recall", "fnr"]:
+            rows.append(paired_wilcoxon_30seed(raw_df, "OR-Logic", other, metric))
+    return pd.DataFrame(rows)
+
+
 def run_mcnemar():
     X_train, X_test, y_train, y_test = locked_seed42_split()
     rows, artifacts = all_rows_for_split(X_train, y_train, X_test, y_test)
@@ -179,6 +241,14 @@ def main():
     mcnemar_df.to_csv(mcnemar_path, index=False)
     print(f"Wrote {mcnemar_path}")
     print(mcnemar_df.to_string(index=False))
+
+    print("Running paired Wilcoxon signed-rank tests across the 30 resamples "
+          "(OR-Logic vs Traditional Voting, OR-Logic vs GBC)...")
+    paired_df = run_paired_tests(raw_df)
+    paired_path = OUT_DIR / "paired_tests.csv"
+    paired_df.to_csv(paired_path, index=False)
+    print(f"Wrote {paired_path}")
+    print(paired_df.to_string(index=False))
 
     or_recall = summary_df[(summary_df["model_or_ensemble"] == "OR-Logic") & (summary_df["metric"] == "recall")].iloc[0]
     print(
